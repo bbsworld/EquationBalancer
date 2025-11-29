@@ -1,0 +1,519 @@
+<!doctype html> 
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Equation Balancer Practice</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: #f4f6fb;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: linear-gradient(180deg, #f4f6fb 0%, #e3ecff 100%);
+      }
+
+      .app {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 32px;
+        border-radius: 18px;
+        box-shadow: 0 20px 50px rgba(30, 56, 105, 0.15);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 2.2rem;
+        color: #1e3869;
+        text-align: center;
+      }
+
+      .intro {
+        text-align: center;
+        color: #495a7c;
+        margin-bottom: 24px;
+      }
+
+      .balance {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 24px 0 8px;
+        padding: 24px;
+        border-radius: 16px;
+        border: 3px solid #d6e1ff;
+        background: #eef3ff;
+      }
+
+      .pan {
+        flex: 1;
+        min-height: 160px;
+        border-radius: 12px;
+        background: #fff;
+        border: 2px dashed #c8d6ff;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: 8px;
+        padding: 12px;
+        position: relative;
+      }
+
+      .pan::after {
+        content: attr(data-label);
+        position: absolute;
+        left: 12px;
+        top: 8px;
+        font-size: 0.85rem;
+        color: #7285b7;
+      }
+
+      .token {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+        box-shadow: inset 0 -4px rgba(0, 0, 0, 0.12);
+      }
+
+      .token.variable {
+        background: #6fa8ff;
+        color: #fff;
+      }
+
+      .token.constant {
+        background: #ffd66f;
+        color: #6b4a0d;
+      }
+
+      .token.constant.negative {
+        background: #ff9b6f;
+        color: #5c1c00;
+      }
+
+      .equation-text {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e3869;
+        margin-top: 8px;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
+        margin: 32px 0 16px;
+        align-items: end;
+      }
+
+      label {
+        font-size: 0.9rem;
+        color: #4a5b82;
+        margin-bottom: 6px;
+        display: inline-block;
+      }
+
+      select,
+      input[type="number"] {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 2px solid #c8d6ff;
+        font-size: 1rem;
+        font-family: inherit;
+      }
+
+      button {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 120ms ease;
+        font-family: inherit;
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      .primary {
+        background: #4a6fff;
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(74, 111, 255, 0.35);
+      }
+
+      .secondary {
+        background: #e7ecff;
+        color: #1e3869;
+      }
+
+      .status {
+        padding: 16px;
+        border-radius: 12px;
+        background: #f7f9ff;
+        border: 2px solid #d6e1ff;
+        color: #4a5b82;
+      }
+
+      .status strong {
+        color: #1e3869;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(13, 27, 58, 0.65);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+      }
+
+      .modal.visible {
+        display: flex;
+      }
+
+      .modal-content {
+        background: #fff;
+        padding: 24px;
+        border-radius: 16px;
+        max-width: 420px;
+        width: 92%;
+        text-align: left;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      }
+
+      .modal-content h2 {
+        margin-top: 0;
+        color: #c0392b;
+      }
+
+      .modal-content p {
+        color: #4a5b82;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 640px) {
+        .balance {
+          flex-direction: column;
+        }
+
+        .token {
+          width: 52px;
+          height: 52px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <h1>Equation Balancer Practice</h1>
+      <p class="intro">
+        Practice moving terms to isolate <strong>x</strong> using the balance
+        model. Choose an operation to apply to both sides. If a step is off,
+        we’ll show a pop-up that explains what went wrong and walk through the
+        correct move.
+      </p>
+
+      <section class="balance">
+        <div class="pan" id="left-pan" data-label="Left side"></div>
+        <div class="pan" id="right-pan" data-label="Right side"></div>
+      </section>
+      <div class="equation-text" id="equation-text">–</div>
+
+      <section class="controls">
+        <div>
+          <label for="operation">Choose an operation</label>
+          <select id="operation">
+            <option value="add">Add to both sides</option>
+            <option value="subtract">Subtract from both sides</option>
+            <option value="multiply">Multiply both sides</option>
+            <option value="divide">Divide both sides</option>
+          </select>
+        </div>
+        <div>
+          <label for="value">Value</label>
+          <input id="value" type="number" step="0.1" placeholder="Enter a number" />
+        </div>
+        <div>
+          <button class="primary" id="apply-btn">Apply Operation</button>
+        </div>
+        <div>
+          <button class="secondary" id="hint-btn">Hint</button>
+        </div>
+      </section>
+
+      <section class="status" id="status-box">
+        <strong>Goal:</strong> Use inverse operations to get
+        <em>x</em> by itself. Remove the constant term first, then deal with the
+        coefficient.
+      </section>
+
+      <div style="text-align: center; margin-top: 18px;">
+        <button class="secondary" id="new-problem-btn">New Problem</button>
+      </div>
+    </main>
+
+    <div class="modal" id="feedback-modal" role="dialog" aria-modal="true">
+      <div class="modal-content">
+        <h2 id="modal-title">Try again</h2>
+        <p id="modal-message"></p>
+        <button class="primary" id="close-modal-btn">Got it</button>
+      </div>
+    </div>
+
+    <script>
+      const state = {
+        originalA: 1,
+        originalB: 0,
+        originalSolution: 0,
+        currentA: 1,
+        currentB: 0,
+        currentRight: 0,
+        stage: 0,
+      };
+
+      const leftPan = document.querySelector("#left-pan");
+      const rightPan = document.querySelector("#right-pan");
+      const equationText = document.querySelector("#equation-text");
+      const statusBox = document.querySelector("#status-box");
+      const modal = document.querySelector("#feedback-modal");
+      const modalTitle = document.querySelector("#modal-title");
+      const modalMessage = document.querySelector("#modal-message");
+
+      function showPopup(title, message) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modal.classList.add("visible");
+      }
+
+      document
+        .querySelector("#close-modal-btn")
+        .addEventListener("click", () => modal.classList.remove("visible"));
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          modal.classList.remove("visible");
+        }
+      });
+
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function generateProblem() {
+        const solution = randomInt(-9, 9) || 3;
+        const a = randomInt(2, 8);
+        const b = randomInt(-8, 8);
+        const c = a * solution + b;
+
+        Object.assign(state, {
+          originalA: a,
+          originalB: b,
+          originalSolution: solution,
+          currentA: a,
+          currentB: b,
+          currentRight: c,
+          stage: 0,
+        });
+
+        document.querySelector("#operation").value = "add";
+        document.querySelector("#value").value = "";
+        updateVisuals();
+        statusBox.innerHTML =
+          "<strong>Step 1:</strong> Remove the constant term from the left.";
+      }
+
+      function createTokens(container, count, label, className) {
+        container.innerHTML = "";
+        const absCount = Math.abs(count);
+        for (let i = 0; i < absCount; i += 1) {
+          const token = document.createElement("div");
+          token.className = `token ${className}`;
+          if (className.includes("constant") && count < 0) {
+            token.classList.add("negative");
+          }
+          token.textContent = label;
+          container.appendChild(token);
+        }
+        if (absCount === 0) {
+          const placeholder = document.createElement("p");
+          placeholder.style.color = "#9aa7d4";
+          placeholder.style.margin = "0";
+          placeholder.textContent = "0";
+          container.appendChild(placeholder);
+        }
+      }
+
+      function updateVisuals() {
+        createTokens(leftPan, state.currentA, "x", "variable");
+        createTokens(
+          rightPan,
+          state.currentRight,
+          state.currentRight >= 0 ? "+1" : "-1",
+          "constant"
+        );
+
+        if (state.currentB !== 0) {
+          const constantBox = document.createElement("div");
+          constantBox.className = "token constant";
+          if (state.currentB < 0) {
+            constantBox.classList.add("negative");
+          }
+          constantBox.textContent = state.currentB >= 0 ? `+${state.currentB}` : state.currentB;
+          leftPan.appendChild(constantBox);
+        }
+
+        equationText.textContent = `${state.currentA}x ${
+          state.currentB >= 0 ? "+ " + state.currentB : "- " + Math.abs(state.currentB)
+        } = ${state.currentRight}`;
+      }
+
+      function speakSolution(step) {
+        const synth = window.speechSynthesis;
+        if (!synth) return;
+        const utterance = new SpeechSynthesisUtterance(step);
+        utterance.rate = 0.95;
+        synth.cancel();
+        synth.speak(utterance);
+      }
+
+      function stageDescription() {
+        return state.stage === 0
+          ? "Subtract the constant term from both sides so the left side only has x terms."
+          : "Divide both sides by the coefficient of x so that a single x remains.";
+      }
+
+      function applyOperation() {
+        const op = document.querySelector("#operation").value;
+        const valueInput = document.querySelector("#value").value.trim();
+        const value = parseFloat(valueInput);
+
+        if (Number.isNaN(value)) {
+          showPopup("Missing value", "Type the number you want to use for the operation.");
+          return;
+        }
+
+        if (state.stage === 0) {
+          handleStageZero(op, value);
+        } else {
+          handleStageOne(op, value);
+        }
+      }
+
+      function handleStageZero(op, value) {
+        if (op !== "add" && op !== "subtract") {
+          showPopup(
+            "Not yet!",
+            "Remove the constant term first by adding or subtracting the same amount on both sides."
+          );
+          speakSolution("First remove the constant term from the left side.");
+          return;
+        }
+
+        const signedValue = op === "add" ? value : -value;
+        const target = -state.currentB;
+
+        if (Math.abs(signedValue - target) > 0.0001) {
+          showPopup(
+            "Close, but not quite",
+            `To cancel ${state.currentB >= 0 ? state.currentB : "-" + Math.abs(state.currentB)} you need to ${
+              target >= 0 ? "add " + target : "subtract " + Math.abs(target)
+            } from both sides.`
+          );
+          speakSolution("Add the opposite of the constant to both sides to eliminate it.");
+          return;
+        }
+
+        state.currentB += signedValue;
+        state.currentRight += signedValue;
+
+        if (Math.abs(state.currentB) <= 0.0001) {
+          state.currentB = 0;
+          state.stage = 1;
+          statusBox.innerHTML =
+            "<strong>Step 2:</strong> Now divide both sides by the coefficient of x.";
+        }
+
+        updateVisuals();
+      }
+
+      function handleStageOne(op, value) {
+        if (state.currentB !== 0) {
+          showPopup(
+            "Hold on",
+            "You still have a constant on the left. Remove it before changing the coefficient."
+          );
+          speakSolution("Eliminate the constant term first.");
+          return;
+        }
+
+        if (op !== "divide" && op !== "multiply") {
+          showPopup(
+            "Use inverse operations",
+            "Now you want a single x, so divide by the coefficient or multiply by its reciprocal."
+          );
+          speakSolution("Divide both sides by the coefficient of x.");
+          return;
+        }
+
+        let appliedA = state.currentA;
+        if (op === "divide") {
+          if (Math.abs(value) < 0.0001) {
+            showPopup("Division issue", "Dividing by zero is undefined. Pick another value.");
+            return;
+          }
+          appliedA /= value;
+          state.currentRight /= value;
+        } else {
+          appliedA *= value;
+          state.currentRight *= value;
+        }
+
+        const goal = 1;
+        if (Math.abs(appliedA - goal) > 0.0001) {
+          const correctValue =
+            op === "divide" ? state.currentA : 1 / state.currentA;
+          const suggestion =
+            op === "divide"
+              ? `Divide both sides by ${state.currentA}.`
+              : `Multiply both sides by ${Number(1 / state.currentA).toFixed(3)} (the reciprocal).`;
+          showPopup("Try a different value", suggestion);
+          speakSolution("Divide both sides by the coefficient of x to make it 1.");
+          return;
+        }
+
+        state.currentA = 1;
+        state.currentRight =
+          Math.round(state.currentRight * 1000) / 1000;
+        statusBox.innerHTML = `<strong>Great!</strong> You solved it: x = ${state.currentRight}. Click “New Problem” to keep practicing.`;
+        updateVisuals();
+        showPopup("Nice work!", `x = ${state.currentRight}. That's the correct solution.`);
+        speakSolution(`Great job. x equals ${state.currentRight}.`);
+      }
+
+      document.querySelector("#apply-btn").addEventListener("click", applyOperation);
+      document.querySelector("#hint-btn").addEventListener("click", () => {
+        showPopup("Hint", stageDescription());
+        speakSolution(stageDescription());
+      });
+      document
+        .querySelector("#new-problem-btn")
+        .addEventListener("click", generateProblem);
+
+      generateProblem();
+    </script>
+  </body>
+</html>
+
